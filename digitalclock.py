@@ -2,124 +2,142 @@ import customtkinter as ctk
 from time import strftime
 from tkinter import messagebox
 
-# Setup main window
-ctk.set_appearance_mode("dark")   # Modes: "light", "dark", "system"
-ctk.set_default_color_theme("blue")  # Themes: "blue", "green", "dark-blue"
+# Set the modern style
+ctk.set_appearance_mode("dark")  
+ctk.set_default_color_theme("blue") 
 
-root = ctk.CTk()
-root.title("⏰ Premium Digital Clock with Alarm")
-root.geometry("450x420")
+class DigitalClock:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("⏰ Premium Clock")
+        self.root.geometry("500x480")
+        
+        # Soft UI Settings
+        self.is_24_hour = False
+        self.alarm_time = None
+        self.font_size = 65
+        self.accent_color = "#76D7C4" # Soft Pastel Mint
 
-# Variables
-is_24_hour = False
-alarm_time = None
-font_size = 50  # Default font size
+        self.setup_ui()
+        self.update_time()
 
-# Function to update time
-def update_time():
-    global is_24_hour, alarm_time
-    
-    # Time format
-    if is_24_hour:
-        current_time = strftime('%H:%M:%S')
-    else:
-        current_time = strftime('%I:%M:%S %p')
-    
-    # Date
-    current_date = strftime('%A, %d %B %Y')
-    
-    # Update labels
-    label_time.configure(text=current_time, font=("Helvetica", font_size, "bold"))
-    label_date.configure(text=current_date)
-    
-    # Check alarm
-    if alarm_time:
-        now = strftime('%H:%M') if is_24_hour else strftime('%I:%M %p')
-        if now == alarm_time:
-            messagebox.showinfo("Alarm", "⏰ Time's up!")
-            alarm_time = None
-    
-    root.after(1000, update_time)
+    def setup_ui(self):
+        # Time Display - Main focus
+        self.label_time = ctk.CTkLabel(
+            self.root, 
+            text="", 
+            font=("Segoe UI", self.font_size, "bold"), 
+            text_color=self.accent_color
+        )
+        self.label_time.pack(pady=(50, 5))
 
-# Toggle 12/24 hour format
-def toggle_format():
-    global is_24_hour
-    is_24_hour = not is_24_hour
+        self.label_date = ctk.CTkLabel(
+            self.root, 
+            text="", 
+            font=("Segoe UI", 18),
+            text_color="#BDC3C7"
+        )
+        self.label_date.pack(pady=(0, 30))
 
-# Set alarm
-def set_alarm():
-    global alarm_time
-    alarm_time = entry_alarm.get().strip()
-    if alarm_time:
-        messagebox.showinfo("Alarm Set", f"✅ Alarm set for {alarm_time}")
-    else:
-        messagebox.showwarning("Invalid", "⚠️ Please enter a valid time.")
+        # Modern Control Frame
+        self.frame_ctrl = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.frame_ctrl.pack(pady=10)
 
-# Open settings panel
-def open_settings():
-    settings = ctk.CTkToplevel(root)
-    settings.title("⚙️ Settings")
-    settings.geometry("300x300")
-    
-    # Theme Selector
-    theme_label = ctk.CTkLabel(settings, text="🎨 Select Theme:", font=("Helvetica", 14, "bold"))
-    theme_label.pack(pady=10)
-    
-    def change_theme(choice):
-        ctk.set_default_color_theme(choice.lower())
-    
-    theme_menu = ctk.CTkOptionMenu(settings, values=["Blue", "Green", "Dark-Blue"], command=change_theme)
-    theme_menu.pack(pady=5)
-    
-    # Mode Selector (Dark/Light/System)
-    mode_label = ctk.CTkLabel(settings, text="🌗 Appearance Mode:", font=("Helvetica", 14, "bold"))
-    mode_label.pack(pady=10)
-    
-    def change_mode(choice):
-        ctk.set_appearance_mode(choice.lower())
-    
-    mode_menu = ctk.CTkOptionMenu(settings, values=["Light", "Dark", "System"], command=change_mode)
-    mode_menu.pack(pady=5)
-    
-    # Font size slider
-    size_label = ctk.CTkLabel(settings, text="🔠 Clock Font Size:", font=("Helvetica", 14, "bold"))
-    size_label.pack(pady=10)
-    
-    def change_size(value):
-        global font_size
-        font_size = int(value)
-    
-    size_slider = ctk.CTkSlider(settings, from_=30, to=100, number_of_steps=70, command=change_size)
-    size_slider.set(font_size)
-    size_slider.pack(pady=5)
+        self.btn_format = ctk.CTkButton(
+            self.frame_ctrl, 
+            text="12/24H Toggle", 
+            command=self.toggle_format, 
+            corner_radius=30, # Extra rounded
+            fg_color="#34495E",
+            hover_color="#2C3E50"
+        )
+        self.btn_format.grid(row=0, column=0, padx=10)
 
-# ================= MAIN UI =================
-label_time = ctk.CTkLabel(root, text="", font=("Helvetica", font_size, "bold"))
-label_time.pack(pady=15)
+        self.btn_settings = ctk.CTkButton(
+            self.frame_ctrl, 
+            text="⚙️ Settings", 
+            command=self.open_settings, 
+            corner_radius=30,
+            fg_color="#34495E",
+            hover_color="#2C3E50"
+        )
+        self.btn_settings.grid(row=0, column=1, padx=10)
 
-label_date = ctk.CTkLabel(root, text="", font=("Helvetica", 20))
-label_date.pack()
+        # Soft Alarm Section
+        self.alarm_frame = ctk.CTkFrame(self.root, corner_radius=20, border_width=1, border_color="#555")
+        self.alarm_frame.pack(pady=30, padx=40, fill="x")
 
-frame_buttons = ctk.CTkFrame(root)
-frame_buttons.pack(pady=15)
+        self.entry_alarm = ctk.CTkEntry(
+            self.alarm_frame, 
+            placeholder_text="HH:MM (e.g. 07:30)", 
+            width=160,
+            height=40,
+            border_width=0,
+            corner_radius=10
+        )
+        self.entry_alarm.grid(row=0, column=0, padx=20, pady=20)
 
-btn_toggle_format = ctk.CTkButton(frame_buttons, text="Toggle 12/24 Hour", command=toggle_format)
-btn_toggle_format.grid(row=0, column=0, padx=10, pady=5)
+        self.btn_alarm = ctk.CTkButton(
+            self.alarm_frame, 
+            text="Set Alarm", 
+            command=self.set_alarm, 
+            width=110,
+            height=40,
+            corner_radius=10,
+            fg_color=self.accent_color,
+            text_color="#1A5276" # Contrast color for readability
+        )
+        self.btn_alarm.grid(row=0, column=1, padx=(0, 20), pady=20)
 
-btn_settings = ctk.CTkButton(frame_buttons, text="⚙️ Settings", command=open_settings)
-btn_settings.grid(row=0, column=1, padx=10, pady=5)
+    def update_time(self):
+        format_str = '%H:%M:%S' if self.is_24_hour else '%I:%M:%S %p'
+        current_time = strftime(format_str)
+        current_date = strftime('%A, %d %B %Y')
+        
+        self.label_time.configure(text=current_time)
+        self.label_date.configure(text=current_date)
+        
+        if self.alarm_time:
+            check_fmt = '%H:%M' if self.is_24_hour else '%I:%M %p'
+            now = strftime(check_fmt)
+            if now == self.alarm_time:
+                self.alarm_time = None
+                messagebox.showinfo("Alarm", "⏰ Time's up!")
+        
+        self.root.after(1000, self.update_time)
 
-# Alarm frame
-frame_alarm = ctk.CTkFrame(root)
-frame_alarm.pack(pady=10)
+    def toggle_format(self):
+        self.is_24_hour = not self.is_24_hour
 
-entry_alarm = ctk.CTkEntry(frame_alarm, placeholder_text="Enter Alarm (07:30 AM / 19:30)")
-entry_alarm.grid(row=0, column=0, padx=5, pady=5)
+    def set_alarm(self):
+        val = self.entry_alarm.get().strip()
+        if val:
+            self.alarm_time = val
+            messagebox.showinfo("Alarm Set", f"✅ Alarm set for {self.alarm_time}")
 
-btn_set_alarm = ctk.CTkButton(frame_alarm, text="Set Alarm", command=set_alarm)
-btn_set_alarm.grid(row=0, column=1, padx=5, pady=5)
+    def open_settings(self):
+        settings = ctk.CTkToplevel(self.root)
+        settings.title("Settings")
+        settings.geometry("320x280")
+        settings.attributes("-topmost", True)
 
-# Start updating clock
-update_time()
+        ctk.CTkLabel(settings, text="Appearance Mode", font=("Segoe UI", 13, "bold")).pack(pady=10)
+        mode_menu = ctk.CTkOptionMenu(settings, values=["Light", "Dark", "System"], 
+                                      command=lambda c: ctk.set_appearance_mode(c),
+                                      corner_radius=20)
+        mode_menu.pack()
 
-root.mainloop()
+        ctk.CTkLabel(settings, text="Clock Size", font=("Segoe UI", 13, "bold")).pack(pady=10)
+        size_slider = ctk.CTkSlider(settings, from_=40, to=100, command=self.change_size)
+        size_slider.set(self.font_size)
+        size_slider.pack()
+
+    def change_size(self, value):
+        self.font_size = int(value)
+        self.label_time.configure(font=("Segoe UI", self.font_size, "bold"))
+
+if __name__ == "__main__":
+    # FIX: Initialize root FIRST, then pass it to the class
+    main_root = ctk.CTk() 
+    app = DigitalClock(main_root)
+    main_root.mainloop()
